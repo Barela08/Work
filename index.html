@@ -7,18 +7,17 @@
 body{font-family:'Segoe UI';margin:0;background:linear-gradient(135deg,#667eea,#764ba2);color:white}
 .container{padding:20px}
 .card{background:rgba(255,255,255,0.1);border-radius:15px;padding:15px;margin-bottom:15px}
-button{padding:8px 12px;border:none;border-radius:10px;margin:5px;cursor:pointer}
+button{padding:10px 14px;border:none;border-radius:10px;margin:5px;cursor:pointer}
 .add{background:#00c853;color:white}
 .pay{background:#2962ff;color:white}
 .adv{background:#ff9800;color:white}
 .del{background:#ff5252;color:white}
-input{padding:8px;border-radius:10px;border:none;margin:5px}
+input{padding:10px;border-radius:10px;border:none;margin:5px}
 </style>
 </head>
 <body>
 <div class="container">
 <h2>💼 Work Tracker FINAL+</h2><div class="card">
-<input type="date" id="date">
 <input type="number" id="amount" placeholder="₹ amount">
 <br>
 <button class="add" onclick="addDay()">+ Add Day</button>
@@ -38,16 +37,12 @@ input{padding:8px;border-radius:10px;border:none;margin:5px}
 <ul id="payments"></ul>
 </div>
 </div><script>
-let store = JSON.parse(localStorage.getItem('store')) || {
-  days: [],
-  payments: [],
-  advance: 0
-};
-
-// AUTO SET TODAY DATE
-function setToday(){
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('date').value = today;
+// SAFE LOAD (kabhi crash na ho)
+let store;
+try {
+  store = JSON.parse(localStorage.getItem('store')) || {days:[],payments:[],advance:0};
+} catch {
+  store = {days:[],payments:[],advance:0};
 }
 
 function save(){
@@ -55,19 +50,16 @@ function save(){
   render();
 }
 
+// ADD DAY FIXED ✅
 function addDay(){
-  let date = document.getElementById('date').value;
-  let amount = Number(document.getElementById('amount').value) || 0;
+  const amtInput = document.getElementById('amount');
+  const amount = Number(amtInput.value) || 0;
 
-  if(!date){
-    alert('Date missing');
-    return;
-  }
+  const today = new Date().toLocaleDateString();
 
-  store.days.push({date, amount});
+  store.days.push({date: today, amount: amount});
 
-  // clear amount for fast next entry
-  document.getElementById('amount').value = '';
+  amtInput.value = ''; // clear
 
   save();
 }
@@ -94,6 +86,8 @@ function receivePayment(){
 
 function addAdvance(){
   let amt = Number(prompt('Advance kitna liya?'))||0;
+  if(!amt) return;
+
   store.advance += amt;
   save();
 }
@@ -104,7 +98,8 @@ function render(){
   list.innerHTML='';
 
   store.days.forEach((d,i)=>{
-    total+=d.amount;
+    total += Number(d.amount)||0;
+
     const li=document.createElement('li');
     li.innerHTML=`
       ${d.date}
@@ -114,7 +109,7 @@ function render(){
     list.appendChild(li);
   });
 
-  let paidTotal = store.payments.reduce((a,b)=>a+b.amount,0);
+  let paidTotal = store.payments.reduce((a,b)=>a+(Number(b.amount)||0),0);
   let remaining = total - paidTotal - store.advance;
 
   document.getElementById('days').textContent = store.days.length;
@@ -132,8 +127,6 @@ function render(){
   });
 }
 
-// INIT
-setToday();
 render();
 </script></body>
 </html>
