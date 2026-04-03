@@ -28,7 +28,7 @@ input{padding:8px;width:100%;margin-top:6px;border-radius:6px;border:1px solid #
 <p>Total Work Amount: ₹<b id="totalAmount"></b></p>
 <p>Advance (Separate): ₹<b id="totalAdvance"></b></p>
 <p><b>Remaining (Work - Payment): ₹<span id="remaining"></span></b></p>
-</div><button class="green" onclick="addPayment()">Receive Payment</button>
+</div><button class="green" onclick="addPayment()">Add Salary Received</button>
 
 <div class="card">
 <h3>Advance</h3>
@@ -38,7 +38,7 @@ input{padding:8px;width:100%;margin-top:6px;border-radius:6px;border:1px solid #
 </div><button class="blue" onclick="window.print()">Print</button>
 
 <div class="card">
-<h3>Payment History</h3>
+<h3>Salary History</h3>
 <div id="payments"></div>
 </div><div class="card">
 <h3>Advance</h3>
@@ -68,7 +68,7 @@ function total(){return data.days.reduce((s,d)=>s+Number(d.amount||0),0)}
 function paid(){return data.payments.reduce((s,p)=>s+p.amount,0)}
 function remaining(){return total()-paid()}
 
-function addPayment(){let a=Number(prompt("Enter payment"));if(!a)return;data.payments.push({amount:a,date:new Date().toLocaleDateString()});save()}
+function addPayment(){let a=Number(prompt("Enter salary received"));if(!a)return;data.payments.push({amount:a,date:new Date().toLocaleDateString()});save()}
 function deletePayment(i){data.payments.splice(i,1);save()}
 
 function saveAdvance(){
@@ -109,7 +109,7 @@ document.getElementById("remaining").innerText=remaining();
 let pDiv=document.getElementById("payments");
 pDiv.innerHTML=data.payments.map((p,i)=>`
 <div class="row">
-<span>• ${p.date} - ₹${p.amount}</span>
+<span>• ${p.date} - ₹${p.amount} (Salary)</span>
 <button class="red" onclick="deletePayment(${i})">Delete</button>
 </div>`).join("");
 
