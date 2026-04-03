@@ -17,17 +17,20 @@ input{padding:8px;width:100%;margin-top:6px;border-radius:6px;border:1px solid #
 .dayAmt{font-weight:bold;color:#2c3e50}
 </style>
 </head>
-<body><h1>Work Tracker</h1><!-- ✅ NEW: APPLY AMOUNT TO ALL DAYS --><div class="card">
+<body><h1>Work Tracker</h1><!-- ✅ Apply amount to all --><div class="card">
 <h3>Update All Days Amount</h3>
 <input id="allAmount" type="number" placeholder="Enter amount for all days">
 <button class="blue" onclick="applyAllAmount()">Apply to All Days</button>
-</div><button class="green" onclick="addToday()">+ Add Today</button> <input type="date" onchange="addCustom(this.value)">
-
-<div id="days"></div><div class="card">
+</div><!-- ✅ Add Day Options --><div class="card">
+<h3>Add Day</h3>
+<button class="green" onclick="addToday()">+ Add Today</button>
+<input id="customDate" type="date">
+<button class="blue" onclick="addManualDate()">Add Selected Date</button>
+</div><div id="days"></div><div class="card">
 <p>Total Days: <b id="totalDays"></b></p>
 <p>Total Work Amount: ₹<b id="totalAmount"></b></p>
 <p>Advance (Separate): ₹<b id="totalAdvance"></b></p>
-<p><b>Remaining (Work - Payment): ₹<span id="remaining"></span></b></p>
+<p><b>Remaining (Work - Salary): ₹<span id="remaining"></span></b></p>
 </div><button class="green" onclick="addPayment()">Add Salary Received</button>
 
 <div class="card">
@@ -49,17 +52,23 @@ let data=JSON.parse(localStorage.getItem("tracker"))||{days:[],payments:[],advan
 function save(){localStorage.setItem("tracker",JSON.stringify(data));render()}
 
 function addToday(){let t=new Date().toISOString().split('T')[0];data.days.push({date:t,amount:""});save()}
-function addCustom(d){if(!d)return;data.days.push({date:d,amount:""});save()}
+
+// ✅ Manual date add (button based)
+function addManualDate(){
+let d=document.getElementById("customDate").value;
+if(!d) return;
+data.days.push({date:d,amount:""});
+document.getElementById("customDate").value="";
+save();
+}
+
 function updateAmount(i,v){data.days[i].amount=v;save()}
 function deleteDay(i){data.days.splice(i,1);save()}
 
-// 🔥 APPLY SAME AMOUNT TO ALL EXISTING DAYS
 function applyAllAmount(){
 let amt=document.getElementById("allAmount").value;
 if(amt==="") return;
-
 data.days.forEach(d=>d.amount=amt);
-
 document.getElementById("allAmount").value="";
 save();
 }
@@ -68,7 +77,13 @@ function total(){return data.days.reduce((s,d)=>s+Number(d.amount||0),0)}
 function paid(){return data.payments.reduce((s,p)=>s+p.amount,0)}
 function remaining(){return total()-paid()}
 
-function addPayment(){let a=Number(prompt("Enter salary received"));if(!a)return;data.payments.push({amount:a,date:new Date().toLocaleDateString()});save()}
+function addPayment(){
+let a=Number(prompt("Enter salary received"));
+if(!a)return;
+data.payments.push({amount:a,date:new Date().toLocaleDateString()});
+save();
+}
+
 function deletePayment(i){data.payments.splice(i,1);save()}
 
 function saveAdvance(){
@@ -109,7 +124,7 @@ document.getElementById("remaining").innerText=remaining();
 let pDiv=document.getElementById("payments");
 pDiv.innerHTML=data.payments.map((p,i)=>`
 <div class="row">
-<span>• ${p.date} - ₹${p.amount} (Salary)</span>
+<span>• ${p.date} - ₹${p.amount}</span>
 <button class="red" onclick="deletePayment(${i})">Delete</button>
 </div>`).join("");
 
