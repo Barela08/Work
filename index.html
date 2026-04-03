@@ -17,11 +17,10 @@ input{padding:8px;width:100%;margin-top:6px;border-radius:6px;border:1px solid #
 .dayAmt{font-weight:bold;color:#2c3e50}
 </style>
 </head>
-<body><h1>Work Tracker</h1><!-- NEW BULK ADD FEATURE --><div class="card">
-<h3>Add Multiple Days</h3>
-<input id="bulkDays" type="number" placeholder="Enter number of days">
-<input id="bulkAmount" type="number" placeholder="Enter amount">
-<button class="blue" onclick="addBulkDays()">Add Days with Amount</button>
+<body><h1>Work Tracker</h1><!-- ✅ NEW: APPLY AMOUNT TO ALL DAYS --><div class="card">
+<h3>Update All Days Amount</h3>
+<input id="allAmount" type="number" placeholder="Enter amount for all days">
+<button class="blue" onclick="applyAllAmount()">Apply to All Days</button>
 </div><button class="green" onclick="addToday()">+ Add Today</button> <input type="date" onchange="addCustom(this.value)">
 
 <div id="days"></div><div class="card">
@@ -54,23 +53,14 @@ function addCustom(d){if(!d)return;data.days.push({date:d,amount:""});save()}
 function updateAmount(i,v){data.days[i].amount=v;save()}
 function deleteDay(i){data.days.splice(i,1);save()}
 
-// 🔥 NEW: Add multiple days with same amount
-function addBulkDays(){
-let days=Number(document.getElementById("bulkDays").value);
-let amt=document.getElementById("bulkAmount").value;
+// 🔥 APPLY SAME AMOUNT TO ALL EXISTING DAYS
+function applyAllAmount(){
+let amt=document.getElementById("allAmount").value;
+if(amt==="") return;
 
-if(!days || days<=0) return;
+data.days.forEach(d=>d.amount=amt);
 
-for(let i=0;i<days;i++){
-let date=new Date();
-date.setDate(date.getDate()+i);
-let d=date.toISOString().split('T')[0];
-data.days.push({date:d,amount:amt});
-}
-
-document.getElementById("bulkDays").value="";
-document.getElementById("bulkAmount").value="";
-
+document.getElementById("allAmount").value="";
 save();
 }
 
