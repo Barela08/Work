@@ -1,152 +1,104 @@
 <!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Work Tracker</title>
-  <style>
-    body { font-family: 'Segoe UI', sans-serif; background:#f5f7fb; padding:15px; max-width:520px; margin:auto; }
-    h1 { text-align:center; color:#333; }
-    button { padding:10px; margin-top:6px; width:100%; border:none; border-radius:8px; background:#4CAF50; color:white; font-weight:600; }
-    button:hover { opacity:0.9; }
-    input { padding:8px; width:100%; margin-top:6px; border-radius:6px; border:1px solid #ccc; }
-    .card { background:white; box-shadow:0 2px 8px rgba(0,0,0,0.08); padding:12px; margin-top:12px; border-radius:10px; }
-    .row { display:flex; justify-content:space-between; align-items:center; gap:10px; }
-    .danger { background:#e74c3c; }
-    .secondary { background:#3498db; }
-    .summary p { margin:6px 0; font-weight:500; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Work Tracker</title>
+<style>
+body{font-family:'Segoe UI';background:#eef2f7;padding:15px;max-width:520px;margin:auto}
+h1{text-align:center}
+.card{background:#fff;padding:12px;margin-top:12px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,0.08)}
+button{padding:10px;border:none;border-radius:8px;width:100%;margin-top:6px;font-weight:600}
+.green{background:#27ae60;color:#fff}
+.blue{background:#2980b9;color:#fff}
+.red{background:#e74c3c;color:#fff}
+input{padding:8px;width:100%;margin-top:6px;border-radius:6px;border:1px solid #ccc}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.small{font-size:13px;color:#666}
+.dayAmt{font-weight:bold;color:#2c3e50}
+</style>
 </head>
-<body><h1>Work Tracker</h1><button onclick="addToday()">+ Add Today</button> <input type="date" onchange="addCustom(this.value)">
+<body><h1>Work Tracker</h1><button class="green" onclick="addToday()">+ Add Today</button> <input type="date" onchange="addCustom(this.value)">
 
 <div class="card">
-  <input id="bulk" placeholder="Bulk Amount">
-  <button class="secondary" onclick="applyBulk()">Apply to All</button>
-</div><div id="days"></div><div class="card summary">
-  <p>Total Days: <span id="totalDays"></span></p>
-  <p>Total Amount: ₹<span id="totalAmount"></span></p>
-  <p>Remaining: ₹<span id="remaining"></span></p>
-</div><button onclick="addPayment()">Receive Payment</button> <button onclick="addAdvance()">Add Advance</button> <button class="secondary" onclick="window.print()">Print</button>
+<input id="bulk" placeholder="Bulk Amount">
+<button class="blue" onclick="applyBulk()">Apply to All Days</button>
+</div><div id="days"></div><div class="card">
+<p>Total Days: <b id="totalDays"></b></p>
+<p>Total Amount: ₹<b id="totalAmount"></b></p>
+<p>Total Advance: ₹<b id="totalAdvance"></b></p>
+<p>Remaining: ₹<b id="remaining"></b></p>
+</div><button class="green" onclick="addPayment()">Receive Payment</button>
 
 <div class="card">
-  <h3>Payments</h3>
-  <div id="payments"></div>
+<h3>Add Advance</h3>
+<input id="advAmt" placeholder="Enter advance amount">
+<button class="blue" onclick="addAdvanceManual()">Add Advance</button>
+</div><button class="blue" onclick="window.print()">Print</button>
+
+<div class="card">
+<h3>Payment History</h3>
+<div id="payments"></div>
 </div><div class="card">
-  <h3>Advances</h3>
-  <div id="advances"></div>
+<h3>Advance History</h3>
+<div id="advances"></div>
 </div><script>
-let data = JSON.parse(localStorage.getItem("tracker")) || {
-  days: [], payments: [], advances: []
-};
+let data=JSON.parse(localStorage.getItem("tracker"))||{days:[],payments:[],advances:[]};
 
-function save() {
-  localStorage.setItem("tracker", JSON.stringify(data));
-  render();
-}
+function save(){localStorage.setItem("tracker",JSON.stringify(data));render()}
 
-function addToday() {
-  let today = new Date().toISOString().split('T')[0];
-  data.days.push({ date: today, amount: "" });
-  save();
-}
+function addToday(){let t=new Date().toISOString().split('T')[0];data.days.push({date:t,amount:""});save()}
 
-function addCustom(date) {
-  if (!date) return;
-  data.days.push({ date, amount: "" });
-  save();
-}
+function addCustom(d){if(!d)return;data.days.push({date:d,amount:""});save()}
 
-function updateAmount(i, val) {
-  data.days[i].amount = val;
-  save();
-}
+function updateAmount(i,v){data.days[i].amount=v;save()}
 
-function deleteDay(i) {
-  data.days.splice(i, 1);
-  save();
-}
+function deleteDay(i){data.days.splice(i,1);save()}
 
-function applyBulk() {
-  let val = document.getElementById("bulk").value;
-  data.days.forEach(d => d.amount = val);
-  save();
-}
+function applyBulk(){let v=document.getElementById("bulk").value;data.days.forEach(d=>d.amount=v);save()}
 
-function addPayment() {
-  let amt = Number(prompt("Enter payment amount"));
-  if (!amt) return;
-  data.payments.push({ amount: amt, date: new Date().toLocaleDateString() });
-  save();
-}
+function total(){return data.days.reduce((s,d)=>s+Number(d.amount||0),0)}
+function paid(){return data.payments.reduce((s,p)=>s+p.amount,0)}
+function adv(){return data.advances.reduce((s,a)=>s+a.amount,0)}
+function remaining(){return total()-paid()-adv()}
 
-function getRemaining() {
-  let total = data.days.reduce((s, d) => s + Number(d.amount || 0), 0);
-  let paid = data.payments.reduce((s, p) => s + p.amount, 0);
-  let adv = data.advances.reduce((s, a) => s + a.amount, 0);
-  return total - paid - adv;
-}
+function addPayment(){let a=Number(prompt("Enter payment"));if(!a)return;data.payments.push({amount:a,date:new Date().toLocaleDateString()});save()}
 
-function addAdvance() {
-  let amt = Number(prompt("Enter advance amount"));
-  if (!amt) return;
+function addAdvanceManual(){let a=Number(document.getElementById("advAmt").value);if(!a)return;
+if(a>remaining()){alert("Advance exceeds remaining");return}
+data.advances.push({amount:a,date:new Date().toLocaleDateString()});document.getElementById("advAmt").value="";save()}
 
-  let remaining = getRemaining();
-  if (amt > remaining) {
-    alert("Advance cannot exceed remaining amount");
-    return;
-  }
+function deleteAdvance(i){data.advances.splice(i,1);save()}
 
-  data.advances.push({ amount: amt, date: new Date().toLocaleDateString() });
-  save();
-}
+function render(){
+let dDiv=document.getElementById("days");dDiv.innerHTML="";
 
-function deleteAdvance(i) {
-  let remainingBefore = getRemaining();
-  let advAmount = data.advances[i].amount;
+data.days.forEach((d,i)=>{
+let amt=d.amount||0;
+dDiv.innerHTML+=`
+<div class="card">
+<div class="row">
+<div style="flex:1">
+<div><b>${d.date}</b></div>
+<div class="small">Amount: <span class="dayAmt">₹${amt}</span></div>
+<input placeholder="Edit amount" value="${d.amount}" oninput="updateAmount(${i},this.value)">
+</div>
+<button class="red" onclick="deleteDay(${i})">X</button>
+</div>
+</div>`
+});
 
-  if (advAmount > remainingBefore + advAmount) {
-    alert("Cannot delete this advance");
-    return;
-  }
+document.getElementById("totalDays").innerText=data.days.length;
+document.getElementById("totalAmount").innerText=total();
+document.getElementById("totalAdvance").innerText=adv();
+document.getElementById("remaining").innerText=remaining();
 
-  data.advances.splice(i, 1);
-  save();
-}
+document.getElementById("payments").innerHTML=data.payments.map(p=>`• ${p.date} - ₹${p.amount}`).join("<br>");
 
-function render() {
-  let daysDiv = document.getElementById("days");
-  daysDiv.innerHTML = "";
-
-  data.days.forEach((d, i) => {
-    daysDiv.innerHTML += `
-      <div class="card">
-        <div class="row">
-          <div style="flex:1">
-            <p><b>${d.date}</b></p>
-            <input value="${d.amount}" placeholder="Enter amount" oninput="updateAmount(${i}, this.value)">
-          </div>
-          <button class="danger" onclick="deleteDay(${i})">Delete</button>
-        </div>
-      </div>`;
-  });
-
-  let total = data.days.reduce((s, d) => s + Number(d.amount || 0), 0);
-  let paid = data.payments.reduce((s, p) => s + p.amount, 0);
-  let adv = data.advances.reduce((s, a) => s + a.amount, 0);
-
-  document.getElementById("totalDays").innerText = data.days.length;
-  document.getElementById("totalAmount").innerText = total;
-  document.getElementById("remaining").innerText = total - paid - adv;
-
-  let payDiv = document.getElementById("payments");
-  payDiv.innerHTML = data.payments.map(p => `• ${p.date} - ₹${p.amount}`).join("<br>");
-
-  let advDiv = document.getElementById("advances");
-  advDiv.innerHTML = data.advances.map((a, i) => `
-    <div class="row">
-      <span>• ${a.date} - ₹${a.amount}</span>
-      <button class="danger" onclick="deleteAdvance(${i})">Delete</button>
-    </div>
-  `).join("");
+document.getElementById("advances").innerHTML=data.advances.map((a,i)=>`
+<div class="row">
+<span>• ${a.date} - ₹${a.amount}</span>
+<button class="red" onclick="deleteAdvance(${i})">Delete</button>
+</div>`).join("");
 }
 
 render();
