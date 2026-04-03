@@ -2,104 +2,121 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Work Tracker FINAL</title>
+<title>Work Tracker FINAL+</title>
 <style>
 body{font-family:'Segoe UI';margin:0;background:linear-gradient(135deg,#667eea,#764ba2);color:white}
 .container{padding:20px}
 .card{background:rgba(255,255,255,0.1);border-radius:15px;padding:15px;margin-bottom:15px}
 button{padding:8px 12px;border:none;border-radius:10px;margin:5px;cursor:pointer}
 .add{background:#00c853;color:white}
-.paid{background:#2962ff;color:white}
+.pay{background:#2962ff;color:white}
+.adv{background:#ff9800;color:white}
 .del{background:#ff5252;color:white}
 input{padding:8px;border-radius:10px;border:none;margin:5px}
-.green{color:#00e676}.red{color:#ff5252}
 </style>
 </head>
 <body>
 <div class="container">
-<h2>💼 Work Tracker FINAL</h2><div class="card">
+<h2>💼 Work Tracker FINAL+</h2><div class="card">
 <input type="date" id="date">
-<input type="number" id="rate" placeholder="₹ amount (optional)">
+<input type="number" id="amount" placeholder="₹ amount">
 <br>
-<button class="add" onclick="addWorkDay()">+ Add Day</button>
-<button class="paid" onclick="markPaid()">Receive Payment</button>
+<button class="add" onclick="addDay()">+ Add Day</button>
+<button class="pay" onclick="receivePayment()">Receive ₹</button>
+<button class="adv" onclick="addAdvance()">Add Advance</button>
 </div><div class="card">
 <h3>📊 Summary</h3>
-<p>Total Days: <span id="total"></span></p>
-<p>Paid Days: <span id="paid"></span></p>
-<p>Unpaid Days: <span id="unpaid"></span></p>
-<p>Total Earned: ₹<span id="earned"></span></p>
-<p>Pending: ₹<span id="pending"></span></p>
+<p>Total Days: <span id="days"></span></p>
+<p>Total Amount: ₹<span id="total"></span></p>
+<p>Remaining: ₹<span id="remaining"></span></p>
+<p>Advance: ₹<span id="advance"></span></p>
 </div><div class="card">
-<h3>📅 Work Log</h3>
-<ul id="log"></ul>
+<h3>📅 Work List</h3>
+<ul id="list"></ul>
+</div><div class="card">
+<h3>💰 Payment History</h3>
+<ul id="payments"></ul>
 </div>
 </div><script>
-let store = JSON.parse(localStorage.getItem('store')) || { data: [] };
+let store = JSON.parse(localStorage.getItem('store')) || {
+  days: [],
+  payments: [],
+  advance: 0
+};
 
 function save(){
   localStorage.setItem('store', JSON.stringify(store));
   render();
 }
 
-function addWorkDay(){
+function addDay(){
   let date = document.getElementById('date').value || new Date().toLocaleDateString();
-  let rate = Number(document.getElementById('rate').value) || 0;
+  let amount = Number(document.getElementById('amount').value) || 0;
 
-  store.data.push({date,paid:false,amount:rate});
-  save();
-}
-
-// SMART PAYMENT DISTRIBUTION
-function markPaid(){
-  let amount = Number(prompt('Kitne paise mile?'))||0;
-
-  for(let d of store.data){
-    if(!d.paid){
-      d.amount = amount; // sabko same amount
-      if(amount === 0) d.amount = 0;
-    }
-  }
-
+  store.days.push({date, amount});
   save();
 }
 
 function updateAmount(i,val){
-  store.data[i].amount = Number(val)||0;
+  store.days[i].amount = Number(val)||0;
   save();
 }
 
 function deleteDay(i){
   if(confirm('Delete?')){
-    store.data.splice(i,1);
+    store.days.splice(i,1);
     save();
   }
 }
 
-function render(){
-  let paid=0,earned=0,pending=0;
-  const log=document.getElementById('log');
-  log.innerHTML='';
+// RECEIVE PAYMENT
+function receivePayment(){
+  let amt = Number(prompt('Kitna paisa mila?'))||0;
+  if(!amt) return;
 
-  store.data.forEach((d,i)=>{
+  store.payments.push({date:new Date().toLocaleDateString(), amount:amt});
+  save();
+}
+
+// ADVANCE
+function addAdvance(){
+  let amt = Number(prompt('Advance kitna liya?'))||0;
+  store.advance += amt;
+  save();
+}
+
+function render(){
+  let total=0;
+  const list=document.getElementById('list');
+  list.innerHTML='';
+
+  store.days.forEach((d,i)=>{
+    total+=d.amount;
     const li=document.createElement('li');
     li.innerHTML=`
       ${d.date}
       <input type="number" value="${d.amount}" onchange="updateAmount(${i},this.value)">
-      <span class="${d.paid?'green':'red'}">${d.paid?'Paid':'Unpaid'}</span>
       <button class="del" onclick="deleteDay(${i})">X</button>
     `;
-    log.appendChild(li);
-
-    if(d.paid){paid++;earned+=d.amount}
-    else pending+=d.amount;
+    list.appendChild(li);
   });
 
-  document.getElementById('total').textContent=store.data.length;
-  document.getElementById('paid').textContent=paid;
-  document.getElementById('unpaid').textContent=store.data.length-paid;
-  document.getElementById('earned').textContent=earned;
-  document.getElementById('pending').textContent=pending;
+  let paidTotal = store.payments.reduce((a,b)=>a+b.amount,0);
+  let remaining = total - paidTotal - store.advance;
+
+  document.getElementById('days').textContent = store.days.length;
+  document.getElementById('total').textContent = total;
+  document.getElementById('remaining').textContent = remaining;
+  document.getElementById('advance').textContent = store.advance;
+
+  const payList=document.getElementById('payments');
+  payList.innerHTML='';
+
+  store.payments.forEach(p=>{
+    const li=document.createElement('li');
+    li.textContent = `${p.date} - ₹${p.amount}`;
+    payList.appendChild(li);
+  });
 }
 
 render();
