@@ -11,65 +11,70 @@ button{padding:10px;border:none;border-radius:8px;width:100%;margin-top:6px;font
 .green{background:#27ae60;color:#fff}
 .blue{background:#2980b9;color:#fff}
 .red{background:#e74c3c;color:#fff}
+.gray{background:#7f8c8d;color:#fff}
 input{padding:8px;width:100%;margin-top:6px;border-radius:6px;border:1px solid #ccc}
 .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .small{font-size:13px;color:#666}
 .dayAmt{font-weight:bold;color:#2c3e50}
-.list{margin-top:6px}
 .list div{padding:6px 0;border-bottom:1px solid #eee}
 </style>
 </head>
-<body><h1>Work Tracker</h1><button class="green" onclick="addToday()">+ Add Today</button> <input type="date" onchange="addCustom(this.value)">
+<body><h1>Work Tracker</h1><button class="gray" onclick="resetAll()">🔄 New Start (Delete All)</button>
+
+<button class="green" onclick="addToday()">+ Add Today</button> <input type="date" onchange="addCustom(this.value)">
 
 <div id="days"></div><div class="card">
 <p>Total Days: <b id="totalDays"></b></p>
 <p>Total Work Amount: ₹<b id="totalAmount"></b></p>
 <p>Advance (Separate): ₹<b id="totalAdvance"></b></p>
-<p><b>Remaining (Only Work - Payment): ₹<span id="remaining"></span></b></p>
+<p><b>Remaining (Work - Payment): ₹<span id="remaining"></span></b></p>
 </div><button class="green" onclick="addPayment()">Receive Payment</button>
 
 <div class="card">
-<h3>Advance (Separate Entry)</h3>
+<h3>Add Advance</h3>
 <input id="advAmt" placeholder="Enter advance amount">
-<button class="blue" onclick="addAdvance()">Add / Update Advance</button>
+<button class="blue" onclick="addAdvance()">Save Advance</button>
 </div><button class="blue" onclick="window.print()">Print</button>
 
 <div class="card">
 <h3>Payment History</h3>
-<div id="payments" class="list"></div>
+<div id="payments"></div>
 </div><div class="card">
-<h3>Advance History</h3>
-<div id="advances" class="list"></div>
+<h3>Advance</h3>
+<div id="advances"></div>
 </div><script>
-let data=JSON.parse(localStorage.getItem("tracker"))||{days:[],payments:[],advances:[]};
+let data=JSON.parse(localStorage.getItem("tracker"))||{days:[],payments:[],advance:0};
 
 function save(){localStorage.setItem("tracker",JSON.stringify(data));render()}
 
+function resetAll(){
+if(confirm("Start new? All data will be deleted")){
+data={days:[],payments:[],advance:0};
+save();
+}
+}
+
 function addToday(){let t=new Date().toISOString().split('T')[0];data.days.push({date:t,amount:""});save()}
-
 function addCustom(d){if(!d)return;data.days.push({date:d,amount:""});save()}
-
 function updateAmount(i,v){data.days[i].amount=v;save()}
-
 function deleteDay(i){data.days.splice(i,1);save()}
 
 function total(){return data.days.reduce((s,d)=>s+Number(d.amount||0),0)}
 function paid(){return data.payments.reduce((s,p)=>s+p.amount,0)}
-function adv(){return data.advances.reduce((s,a)=>s+a.amount,0)}
-
-// 🔴 IMPORTANT: Remaining is ONLY work - payment (advance not deducted)
 function remaining(){return total()-paid()}
 
 function addPayment(){let a=Number(prompt("Enter payment"));if(!a)return;data.payments.push({amount:a,date:new Date().toLocaleDateString()});save()}
 
-// Advance is separate (no relation to remaining)
-function addAdvance(){let a=Number(document.getElementById("advAmt").value);if(!a)return;
+function deletePayment(i){data.payments.splice(i,1);save()}
 
-// Replace old advance (single editable system)
-data.advances=[{amount:a,date:new Date().toLocaleDateString()}];
-
+// FIXED ADVANCE (single value, always editable)
+function addAdvance(){
+let a=Number(document.getElementById("advAmt").value);
+if(isNaN(a)) return;
+data.advance=a;
 document.getElementById("advAmt").value="";
-save()}
+save();
+}
 
 function render(){
 let dDiv=document.getElementById("days");dDiv.innerHTML="";
@@ -91,12 +96,20 @@ dDiv.innerHTML+=`
 
 document.getElementById("totalDays").innerText=data.days.length;
 document.getElementById("totalAmount").innerText=total();
-document.getElementById("totalAdvance").innerText=adv();
+document.getElementById("totalAdvance").innerText=data.advance;
 document.getElementById("remaining").innerText=remaining();
 
-document.getElementById("payments").innerHTML=data.payments.map(p=>`<div>• ${p.date} - ₹${p.amount}</div>`).join("");
+// payments with delete button
+let pDiv=document.getElementById("payments");
+pDiv.innerHTML=data.payments.map((p,i)=>`
+<div class="row">
+<span>• ${p.date} - ₹${p.amount}</span>
+<button class="red" onclick="deletePayment(${i})">Delete</button>
+</div>`).join("");
 
-document.getElementById("advances").innerHTML=data.advances.map(a=>`<div>• ${a.date} - ₹${a.amount}</div>`).join("");
+// advance display
+let aDiv=document.getElementById("advances");
+aDiv.innerHTML=`<div>₹${data.advance}</div>`;
 }
 
 render();
