@@ -4,9 +4,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Work Tracker</title>
 <style>
-body{font-family:'Segoe UI';background:#eef2f7;padding:15px;max-width:520px;margin:auto}
-h1{text-align:center}
-.card{background:#fff;padding:12px;margin-top:12px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,0.08)}
+body{font-family:'Segoe UI';background:#f4f6fb;padding:15px;max-width:520px;margin:auto}
+h1{text-align:center;margin-bottom:10px}
+.card{background:#fff;padding:12px;margin-top:12px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
 button{padding:10px;border:none;border-radius:8px;width:100%;margin-top:6px;font-weight:600}
 .green{background:#27ae60;color:#fff}
 .blue{background:#2980b9;color:#fff}
@@ -15,32 +15,31 @@ input{padding:8px;width:100%;margin-top:6px;border-radius:6px;border:1px solid #
 .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .small{font-size:13px;color:#666}
 .dayAmt{font-weight:bold;color:#2c3e50}
+.list{margin-top:6px}
+.list div{padding:6px 0;border-bottom:1px solid #eee}
 </style>
 </head>
 <body><h1>Work Tracker</h1><button class="green" onclick="addToday()">+ Add Today</button> <input type="date" onchange="addCustom(this.value)">
 
-<div class="card">
-<input id="bulk" placeholder="Bulk Amount">
-<button class="blue" onclick="applyBulk()">Apply to All Days</button>
-</div><div id="days"></div><div class="card">
+<div id="days"></div><div class="card">
 <p>Total Days: <b id="totalDays"></b></p>
-<p>Total Amount: ₹<b id="totalAmount"></b></p>
-<p>Total Advance: ₹<b id="totalAdvance"></b></p>
-<p>Remaining: ₹<b id="remaining"></b></p>
+<p>Total Work Amount: ₹<b id="totalAmount"></b></p>
+<p>Advance (Separate): ₹<b id="totalAdvance"></b></p>
+<p><b>Remaining (Only Work - Payment): ₹<span id="remaining"></span></b></p>
 </div><button class="green" onclick="addPayment()">Receive Payment</button>
 
 <div class="card">
-<h3>Add Advance</h3>
+<h3>Advance (Separate Entry)</h3>
 <input id="advAmt" placeholder="Enter advance amount">
-<button class="blue" onclick="addAdvanceManual()">Add Advance</button>
+<button class="blue" onclick="addAdvance()">Add / Update Advance</button>
 </div><button class="blue" onclick="window.print()">Print</button>
 
 <div class="card">
 <h3>Payment History</h3>
-<div id="payments"></div>
+<div id="payments" class="list"></div>
 </div><div class="card">
 <h3>Advance History</h3>
-<div id="advances"></div>
+<div id="advances" class="list"></div>
 </div><script>
 let data=JSON.parse(localStorage.getItem("tracker"))||{days:[],payments:[],advances:[]};
 
@@ -54,20 +53,23 @@ function updateAmount(i,v){data.days[i].amount=v;save()}
 
 function deleteDay(i){data.days.splice(i,1);save()}
 
-function applyBulk(){let v=document.getElementById("bulk").value;data.days.forEach(d=>d.amount=v);save()}
-
 function total(){return data.days.reduce((s,d)=>s+Number(d.amount||0),0)}
 function paid(){return data.payments.reduce((s,p)=>s+p.amount,0)}
 function adv(){return data.advances.reduce((s,a)=>s+a.amount,0)}
-function remaining(){return total()-paid()-adv()}
+
+// 🔴 IMPORTANT: Remaining is ONLY work - payment (advance not deducted)
+function remaining(){return total()-paid()}
 
 function addPayment(){let a=Number(prompt("Enter payment"));if(!a)return;data.payments.push({amount:a,date:new Date().toLocaleDateString()});save()}
 
-function addAdvanceManual(){let a=Number(document.getElementById("advAmt").value);if(!a)return;
-if(a>remaining()){alert("Advance exceeds remaining");return}
-data.advances.push({amount:a,date:new Date().toLocaleDateString()});document.getElementById("advAmt").value="";save()}
+// Advance is separate (no relation to remaining)
+function addAdvance(){let a=Number(document.getElementById("advAmt").value);if(!a)return;
 
-function deleteAdvance(i){data.advances.splice(i,1);save()}
+// Replace old advance (single editable system)
+data.advances=[{amount:a,date:new Date().toLocaleDateString()}];
+
+document.getElementById("advAmt").value="";
+save()}
 
 function render(){
 let dDiv=document.getElementById("days");dDiv.innerHTML="";
@@ -92,13 +94,9 @@ document.getElementById("totalAmount").innerText=total();
 document.getElementById("totalAdvance").innerText=adv();
 document.getElementById("remaining").innerText=remaining();
 
-document.getElementById("payments").innerHTML=data.payments.map(p=>`• ${p.date} - ₹${p.amount}`).join("<br>");
+document.getElementById("payments").innerHTML=data.payments.map(p=>`<div>• ${p.date} - ₹${p.amount}</div>`).join("");
 
-document.getElementById("advances").innerHTML=data.advances.map((a,i)=>`
-<div class="row">
-<span>• ${a.date} - ₹${a.amount}</span>
-<button class="red" onclick="deleteAdvance(${i})">Delete</button>
-</div>`).join("");
+document.getElementById("advances").innerHTML=data.advances.map(a=>`<div>• ${a.date} - ₹${a.amount}</div>`).join("");
 }
 
 render();
