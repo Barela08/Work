@@ -11,7 +11,6 @@ button{padding:10px;border:none;border-radius:8px;width:100%;margin-top:6px;font
 .green{background:#27ae60;color:#fff}
 .blue{background:#2980b9;color:#fff}
 .red{background:#e74c3c;color:#fff}
-.gray{background:#7f8c8d;color:#fff}
 input{padding:8px;width:100%;margin-top:6px;border-radius:6px;border:1px solid #ccc}
 .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .small{font-size:13px;color:#666}
@@ -19,9 +18,7 @@ input{padding:8px;width:100%;margin-top:6px;border-radius:6px;border:1px solid #
 .list div{padding:6px 0;border-bottom:1px solid #eee}
 </style>
 </head>
-
-
-<button class="green" onclick="addToday()">+ Add Today</button> <input type="date" onchange="addCustom(this.value)">
+<body><h1>Work Tracker</h1><button class="green" onclick="addToday()">+ Add Today</button> <input type="date" onchange="addCustom(this.value)">
 
 <div id="days"></div><div class="card">
 <p>Total Days: <b id="totalDays"></b></p>
@@ -31,9 +28,10 @@ input{padding:8px;width:100%;margin-top:6px;border-radius:6px;border:1px solid #
 </div><button class="green" onclick="addPayment()">Receive Payment</button>
 
 <div class="card">
-<h3>Add Advance</h3>
+<h3>Advance</h3>
 <input id="advAmt" placeholder="Enter advance amount">
-<button class="blue" onclick="addAdvance()">Save Advance</button>
+<button class="blue" onclick="saveAdvance()">Save / Update Advance</button>
+<button class="red" onclick="editAdvance()">Edit Existing Advance</button>
 </div><button class="blue" onclick="window.print()">Print</button>
 
 <div class="card">
@@ -47,13 +45,6 @@ let data=JSON.parse(localStorage.getItem("tracker"))||{days:[],payments:[],advan
 
 function save(){localStorage.setItem("tracker",JSON.stringify(data));render()}
 
-function resetAll(){
-if(confirm("Start new? All data will be deleted")){
-data={days:[],payments:[],advance:0};
-save();
-}
-}
-
 function addToday(){let t=new Date().toISOString().split('T')[0];data.days.push({date:t,amount:""});save()}
 function addCustom(d){if(!d)return;data.days.push({date:d,amount:""});save()}
 function updateAmount(i,v){data.days[i].amount=v;save()}
@@ -64,16 +55,20 @@ function paid(){return data.payments.reduce((s,p)=>s+p.amount,0)}
 function remaining(){return total()-paid()}
 
 function addPayment(){let a=Number(prompt("Enter payment"));if(!a)return;data.payments.push({amount:a,date:new Date().toLocaleDateString()});save()}
-
 function deletePayment(i){data.payments.splice(i,1);save()}
 
-// FIXED ADVANCE (single value, always editable)
-function addAdvance(){
+// Save / update advance directly
+function saveAdvance(){
 let a=Number(document.getElementById("advAmt").value);
 if(isNaN(a)) return;
 data.advance=a;
 document.getElementById("advAmt").value="";
 save();
+}
+
+// Edit advance (load into input)
+function editAdvance(){
+document.getElementById("advAmt").value=data.advance;
 }
 
 function render(){
@@ -99,7 +94,6 @@ document.getElementById("totalAmount").innerText=total();
 document.getElementById("totalAdvance").innerText=data.advance;
 document.getElementById("remaining").innerText=remaining();
 
-// payments with delete button
 let pDiv=document.getElementById("payments");
 pDiv.innerHTML=data.payments.map((p,i)=>`
 <div class="row">
@@ -107,7 +101,6 @@ pDiv.innerHTML=data.payments.map((p,i)=>`
 <button class="red" onclick="deletePayment(${i})">Delete</button>
 </div>`).join("");
 
-// advance display
 let aDiv=document.getElementById("advances");
 aDiv.innerHTML=`<div>₹${data.advance}</div>`;
 }
