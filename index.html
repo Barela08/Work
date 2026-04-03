@@ -1,0 +1,157 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Work Tracker PRO+</title>
+<style>
+body {
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  background: linear-gradient(135deg,#667eea,#764ba2);
+  color: white;
+}
+.container {
+  padding: 20px;
+}
+.card {
+  background: rgba(255,255,255,0.1);
+  border-radius: 15px;
+  padding: 15px;
+  margin-bottom: 15px;
+  backdrop-filter: blur(10px);
+}
+button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 10px;
+  margin: 5px;
+  cursor: pointer;
+}
+.add { background: #00c853; color: white; }
+.paid { background: #2962ff; color: white; }
+.backup { background: #ffab00; }
+input {
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  margin: 5px;
+}
+li { margin: 5px 0; }
+.green { color: #00e676; }
+.red { color: #ff5252; }
+</style>
+</head>
+<body>
+<div class="container" id="app">
+<h2>💼 Work Tracker PRO+</h2><div class="card">
+<input type="number" id="rate" placeholder="₹ per day">
+<br>
+<button class="add" onclick="addWorkDay()">+ Add Day</button>
+<button class="paid" onclick="markPaid()">Mark Paid</button>
+<button class="backup" onclick="downloadBackup()">Backup</button>
+<input type="file" onchange="restoreBackup(event)">
+</div><div class="card">
+<h3>📊 Summary</h3>
+<p>Total Days: <span id="total"></span></p>
+<p>Paid: <span id="paid"></span></p>
+<p>Unpaid: <span id="unpaid"></span></p>
+<p>Total Earned: ₹<span id="earned"></span></p>
+<p>Pending: ₹<span id="pending"></span></p>
+</div><div class="card">
+<h3>📅 Work Log</h3>
+<ul id="log"></ul>
+</div>
+</div><script>
+// Set default admin password
+let password = localStorage.getItem('pass');
+
+if (!password) {
+  password = 'admin1234';
+  localStorage.setItem('pass', password);
+}
+
+// Admin route protection
+if (window.location.pathname === '/admin') {
+  const input = prompt('Enter Password');
+  if (input !== localStorage.getItem('pass')) {
+    document.body.innerHTML = '<h1>Access Denied</h1>';
+  }
+}
+
+if (window.location.pathname === '/admin') {
+  const input = prompt('Enter Password');
+  if (input !== localStorage.getItem('pass')) {
+    document.body.innerHTML = '<h1>Access Denied</h1>';
+  }
+}
+
+let data = JSON.parse(localStorage.getItem('workData')) || [];
+
+function save() {
+  localStorage.setItem('workData', JSON.stringify(data));
+  render();
+}
+
+function getRate() {
+  return Number(document.getElementById('rate').value) || 0;
+}
+
+function addWorkDay() {
+  const rate = getRate();
+  if (!rate) return alert('Enter amount');
+  data.push({ date: new Date().toLocaleDateString(), paid: false, amount: rate });
+  save();
+}
+
+function markPaid() {
+  for (let i = data.length - 1; i >= 0; i--) {
+    if (!data[i].paid) {
+      data[i].paid = true;
+      break;
+    }
+  }
+  save();
+}
+
+function render() {
+  let paid = 0, earned = 0, pending = 0;
+  const log = document.getElementById('log');
+  log.innerHTML = '';
+
+  data.forEach(d => {
+    const li = document.createElement('li');
+    li.innerHTML = `${d.date} - ₹${d.amount} <span class="${d.paid?'green':'red'}">${d.paid?'Paid':'Unpaid'}</span>`;
+    log.appendChild(li);
+
+    if (d.paid) { paid++; earned += d.amount; }
+    else { pending += d.amount; }
+  });
+
+  document.getElementById('total').textContent = data.length;
+  document.getElementById('paid').textContent = paid;
+  document.getElementById('unpaid').textContent = data.length - paid;
+  document.getElementById('earned').textContent = earned;
+  document.getElementById('pending').textContent = pending;
+}
+
+function downloadBackup() {
+  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'backup.json';
+  a.click();
+}
+
+function restoreBackup(e) {
+  const file = e.target.files[0];
+  const reader = new FileReader();
+  reader.onload = () => {
+    data = JSON.parse(reader.result);
+    save();
+  };
+  reader.readAsText(file);
+}
+
+render();
+</script></body>
+</html>
