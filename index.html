@@ -1,138 +1,76 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html><html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Work Tracker FINAL FIXED</title>
+<title>Work Tracker SIMPLE FIX</title>
 <style>
-body{font-family:'Segoe UI';margin:0;background:linear-gradient(135deg,#667eea,#764ba2);color:white}
-.container{padding:20px}
-.card{background:rgba(255,255,255,0.1);border-radius:15px;padding:15px;margin-bottom:15px}
-button{padding:12px;border:none;border-radius:10px;margin:5px;cursor:pointer}
-.add{background:#00c853;color:white}
-.pay{background:#2962ff;color:white}
-.adv{background:#ff9800;color:white}
-.del{background:#ff5252;color:white}
-input{padding:10px;border-radius:10px;border:none;margin:5px}
+body{font-family:sans-serif;background:#222;color:#fff;padding:15px}
+button{padding:10px;margin:5px}
+input{padding:8px;margin:5px}
 </style>
 </head>
-<body>
-<div class="container">
-<h2>💼 Work Tracker (FIXED)</h2><div class="card">
-<input type="number" id="amount" placeholder="₹ amount">
-<br>
-<button class="add" id="addBtn">+ Add Day</button>
-<button class="pay" id="payBtn">Receive ₹</button>
-<button class="adv" id="advBtn">Add Advance</button>
-</div><div class="card">
-<h3>📊 Summary</h3>
-<p>Total Days: <span id="days"></span></p>
-<p>Total Amount: ₹<span id="total"></span></p>
-<p>Remaining: ₹<span id="remaining"></span></p>
-<p>Advance: ₹<span id="advance"></span></p>
-</div><div class="card">
-<h3>📅 Work List</h3>
-<ul id="list"></ul>
-</div><div class="card">
-<h3>💰 Payment History</h3>
-<ul id="payments"></ul>
-</div>
-</div><script>
-document.addEventListener('DOMContentLoaded', function(){
-
-let store;
-try {
-  store = JSON.parse(localStorage.getItem('store')) || {days:[],payments:[],advance:0};
-} catch {
-  store = {days:[],payments:[],advance:0};
-}
+<body><h2>Work Tracker (Simple & Working)</h2><input type="number" id="amount" placeholder="₹ amount">
+<button onclick="addDay()">+ Add Day</button>
+<button onclick="pay()">Receive ₹</button>
+<button onclick="advance()">Advance</button><h3>Total Days: <span id="days">0</span></h3>
+<h3>Total Amount: ₹<span id="total">0</span></h3>
+<h3>Remaining: ₹<span id="remaining">0</span></h3>
+<h3>Advance: ₹<span id="adv">0</span></h3><ul id="list"></ul><script>
+let store = JSON.parse(localStorage.getItem('store')) || {
+  days: [], payments: [], advance: 0
+};
 
 function save(){
   localStorage.setItem('store', JSON.stringify(store));
   render();
 }
 
-// ADD DAY FIX
-const addBtn = document.getElementById('addBtn');
-addBtn.addEventListener('click', function(){
-  const amtInput = document.getElementById('amount');
-  const amount = Number(amtInput.value) || 0;
-
-  const today = new Date().toLocaleDateString();
-
-  store.days.push({date: today, amount: amount});
-
-  amtInput.value = '';
-
+function addDay(){
+  let amt = Number(document.getElementById('amount').value) || 0;
+  store.days.push({date:new Date().toLocaleDateString(), amount:amt});
+  document.getElementById('amount').value = '';
   save();
-});
+}
 
-// PAYMENT
-const payBtn = document.getElementById('payBtn');
-payBtn.addEventListener('click', function(){
-  let amt = Number(prompt('Kitna paisa mila?'))||0;
+function pay(){
+  let amt = Number(prompt('Kitna mila?'))||0;
   if(!amt) return;
-  store.payments.push({date:new Date().toLocaleDateString(), amount:amt});
+  store.payments.push({amount:amt});
   save();
-});
+}
 
-// ADVANCE
-const advBtn = document.getElementById('advBtn');
-advBtn.addEventListener('click', function(){
-  let amt = Number(prompt('Advance kitna liya?'))||0;
+function advance(){
+  let amt = Number(prompt('Advance?'))||0;
   if(!amt) return;
   store.advance += amt;
   save();
-});
+}
 
-window.updateAmount = function(i,val){
-  store.days[i].amount = Number(val)||0;
+function del(i){
+  store.days.splice(i,1);
   save();
 }
 
-window.deleteDay = function(i){
-  if(confirm('Delete?')){
-    store.days.splice(i,1);
-    save();
-  }
-}
-
 function render(){
-  let total=0;
-  const list=document.getElementById('list');
+  let total = 0;
+  let list = document.getElementById('list');
   list.innerHTML='';
 
   store.days.forEach((d,i)=>{
-    total += Number(d.amount)||0;
-
-    const li=document.createElement('li');
-    li.innerHTML=`
-      ${d.date}
-      <input type="number" value="${d.amount}" onchange="updateAmount(${i},this.value)">
-      <button class="del" onclick="deleteDay(${i})">X</button>
-    `;
+    total += d.amount;
+    let li = document.createElement('li');
+    li.innerHTML = `${d.date} ₹${d.amount} <button onclick="del(${i})">X</button>`;
     list.appendChild(li);
   });
 
-  let paidTotal = store.payments.reduce((a,b)=>a+(Number(b.amount)||0),0);
-  let remaining = total - paidTotal - store.advance;
+  let paid = store.payments.reduce((a,b)=>a+b.amount,0);
+  let remaining = total - paid - store.advance;
 
   document.getElementById('days').textContent = store.days.length;
   document.getElementById('total').textContent = total;
   document.getElementById('remaining').textContent = remaining;
-  document.getElementById('advance').textContent = store.advance;
-
-  const payList=document.getElementById('payments');
-  payList.innerHTML='';
-
-  store.payments.forEach(p=>{
-    const li=document.createElement('li');
-    li.textContent = `${p.date} - ₹${p.amount}`;
-    payList.appendChild(li);
-  });
+  document.getElementById('adv').textContent = store.advance;
 }
 
 render();
-
-});
 </script></body>
 </html>
