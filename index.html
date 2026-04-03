@@ -15,10 +15,14 @@ input{padding:8px;width:100%;margin-top:6px;border-radius:6px;border:1px solid #
 .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .small{font-size:13px;color:#666}
 .dayAmt{font-weight:bold;color:#2c3e50}
-.list div{padding:6px 0;border-bottom:1px solid #eee}
 </style>
 </head>
-<body><h1>Work Tracker</h1><button class="green" onclick="addToday()">+ Add Today</button> <input type="date" onchange="addCustom(this.value)">
+<body><h1>Work Tracker</h1><!-- NEW BULK ADD FEATURE --><div class="card">
+<h3>Add Multiple Days</h3>
+<input id="bulkDays" type="number" placeholder="Enter number of days">
+<input id="bulkAmount" type="number" placeholder="Enter amount">
+<button class="blue" onclick="addBulkDays()">Add Days with Amount</button>
+</div><button class="green" onclick="addToday()">+ Add Today</button> <input type="date" onchange="addCustom(this.value)">
 
 <div id="days"></div><div class="card">
 <p>Total Days: <b id="totalDays"></b></p>
@@ -50,6 +54,26 @@ function addCustom(d){if(!d)return;data.days.push({date:d,amount:""});save()}
 function updateAmount(i,v){data.days[i].amount=v;save()}
 function deleteDay(i){data.days.splice(i,1);save()}
 
+// 🔥 NEW: Add multiple days with same amount
+function addBulkDays(){
+let days=Number(document.getElementById("bulkDays").value);
+let amt=document.getElementById("bulkAmount").value;
+
+if(!days || days<=0) return;
+
+for(let i=0;i<days;i++){
+let date=new Date();
+date.setDate(date.getDate()+i);
+let d=date.toISOString().split('T')[0];
+data.days.push({date:d,amount:amt});
+}
+
+document.getElementById("bulkDays").value="";
+document.getElementById("bulkAmount").value="";
+
+save();
+}
+
 function total(){return data.days.reduce((s,d)=>s+Number(d.amount||0),0)}
 function paid(){return data.payments.reduce((s,p)=>s+p.amount,0)}
 function remaining(){return total()-paid()}
@@ -57,7 +81,6 @@ function remaining(){return total()-paid()}
 function addPayment(){let a=Number(prompt("Enter payment"));if(!a)return;data.payments.push({amount:a,date:new Date().toLocaleDateString()});save()}
 function deletePayment(i){data.payments.splice(i,1);save()}
 
-// Save / update advance directly
 function saveAdvance(){
 let a=Number(document.getElementById("advAmt").value);
 if(isNaN(a)) return;
@@ -66,7 +89,6 @@ document.getElementById("advAmt").value="";
 save();
 }
 
-// Edit advance (load into input)
 function editAdvance(){
 document.getElementById("advAmt").value=data.advance;
 }
