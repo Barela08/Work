@@ -2,58 +2,32 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Work Tracker PRO+</title>
+<title>Work Tracker FINAL</title>
 <style>
-body {
-  font-family: 'Segoe UI', sans-serif;
-  margin: 0;
-  background: linear-gradient(135deg,#667eea,#764ba2);
-  color: white;
-}
-.container { padding: 20px; }
-.card {
-  background: rgba(255,255,255,0.1);
-  border-radius: 15px;
-  padding: 15px;
-  margin-bottom: 15px;
-  backdrop-filter: blur(10px);
-}
-button {
-  padding: 8px 12px;
-  border: none;
-  border-radius: 10px;
-  margin: 5px;
-  cursor: pointer;
-}
-.add { background: #00c853; color: white; }
-.paid { background: #2962ff; color: white; }
-.backup { background: #ffab00; }
-.save { background: #ff5252; color:white; }
-input {
-  padding: 8px;
-  border-radius: 10px;
-  border: none;
-  margin: 5px;
-}
-li { margin: 8px 0; }
-.green { color: #00e676; }
-.red { color: #ff5252; }
+body{font-family:'Segoe UI';margin:0;background:linear-gradient(135deg,#667eea,#764ba2);color:white}
+.container{padding:20px}
+.card{background:rgba(255,255,255,0.1);border-radius:15px;padding:15px;margin-bottom:15px}
+button{padding:8px 12px;border:none;border-radius:10px;margin:5px;cursor:pointer}
+.add{background:#00c853;color:white}
+.paid{background:#2962ff;color:white}
+.del{background:#ff5252;color:white}
+input{padding:8px;border-radius:10px;border:none;margin:5px}
+.green{color:#00e676}.red{color:#ff5252}
 </style>
 </head>
 <body>
 <div class="container">
-<h2>💼 Work Tracker PRO+</h2><div class="card">
-<input type="number" id="rate" placeholder="₹ per day (optional)">
+<h2>💼 Work Tracker FINAL</h2><div class="card">
+<input type="date" id="date">
+<input type="number" id="rate" placeholder="₹ amount (optional)">
 <br>
 <button class="add" onclick="addWorkDay()">+ Add Day</button>
-<button class="paid" onclick="markPaid()">Mark Paid</button>
-<button class="backup" onclick="downloadBackup()">Backup</button>
-<input type="file" onchange="restoreBackup(event)">
+<button class="paid" onclick="markPaid()">Receive Payment</button>
 </div><div class="card">
 <h3>📊 Summary</h3>
 <p>Total Days: <span id="total"></span></p>
-<p>Paid: <span id="paid"></span></p>
-<p>Unpaid: <span id="unpaid"></span></p>
+<p>Paid Days: <span id="paid"></span></p>
+<p>Unpaid Days: <span id="unpaid"></span></p>
 <p>Total Earned: ₹<span id="earned"></span></p>
 <p>Pending: ₹<span id="pending"></span></p>
 </div><div class="card">
@@ -61,109 +35,71 @@ li { margin: 8px 0; }
 <ul id="log"></ul>
 </div>
 </div><script>
-// Password fix
-let password = localStorage.getItem('pass');
-if (!password) {
-  password = 'admin1234';
-  localStorage.setItem('pass', password);
-}
+let store = JSON.parse(localStorage.getItem('store')) || { data: [] };
 
-if (window.location.pathname === '/admin') {
-  const input = prompt('Enter Password');
-  if (input !== password) {
-    document.body.innerHTML = '<h1>Access Denied</h1>';
-  }
-}
-
-let data = JSON.parse(localStorage.getItem('workData')) || [];
-
-function save() {
-  localStorage.setItem('workData', JSON.stringify(data));
+function save(){
+  localStorage.setItem('store', JSON.stringify(store));
   render();
 }
 
-function getRate() {
-  return Number(document.getElementById('rate').value) || 0;
-}
+function addWorkDay(){
+  let date = document.getElementById('date').value || new Date().toLocaleDateString();
+  let rate = Number(document.getElementById('rate').value) || 0;
 
-// ADD DAY (amount optional)
-function addWorkDay() {
-  const rate = getRate();
-  data.push({
-    date: new Date().toLocaleDateString(),
-    paid: false,
-    amount: rate
-  });
+  store.data.push({date,paid:false,amount:rate});
   save();
 }
 
-// MARK PAID
-function markPaid() {
-  for (let i = data.length - 1; i >= 0; i--) {
-    if (!data[i].paid) {
-      data[i].paid = true;
-      break;
+// SMART PAYMENT DISTRIBUTION
+function markPaid(){
+  let amount = Number(prompt('Kitne paise mile?'))||0;
+
+  for(let d of store.data){
+    if(!d.paid){
+      d.amount = amount; // sabko same amount
+      if(amount === 0) d.amount = 0;
     }
   }
+
   save();
 }
 
-// UPDATE AMOUNT LATER
-function updateAmount(index, value) {
-  data[index].amount = Number(value) || 0;
+function updateAmount(i,val){
+  store.data[i].amount = Number(val)||0;
   save();
 }
 
-function render() {
-  let paid = 0, earned = 0, pending = 0;
-  const log = document.getElementById('log');
-  log.innerHTML = '';
+function deleteDay(i){
+  if(confirm('Delete?')){
+    store.data.splice(i,1);
+    save();
+  }
+}
 
-  data.forEach((d, i) => {
-    const li = document.createElement('li');
+function render(){
+  let paid=0,earned=0,pending=0;
+  const log=document.getElementById('log');
+  log.innerHTML='';
 
-    li.innerHTML = `
+  store.data.forEach((d,i)=>{
+    const li=document.createElement('li');
+    li.innerHTML=`
       ${d.date}
-      <input type="number" value="${d.amount}" placeholder="₹" onchange="updateAmount(${i}, this.value)">
-      <span class="${d.paid ? 'green' : 'red'}">${d.paid ? 'Paid' : 'Unpaid'}</span>
+      <input type="number" value="${d.amount}" onchange="updateAmount(${i},this.value)">
+      <span class="${d.paid?'green':'red'}">${d.paid?'Paid':'Unpaid'}</span>
+      <button class="del" onclick="deleteDay(${i})">X</button>
     `;
-
     log.appendChild(li);
 
-    if (d.paid) {
-      paid++;
-      earned += d.amount;
-    } else {
-      pending += d.amount;
-    }
+    if(d.paid){paid++;earned+=d.amount}
+    else pending+=d.amount;
   });
 
-  document.getElementById('total').textContent = data.length;
-  document.getElementById('paid').textContent = paid;
-  document.getElementById('unpaid').textContent = data.length - paid;
-  document.getElementById('earned').textContent = earned;
-  document.getElementById('pending').textContent = pending;
-}
-
-// BACKUP
-function downloadBackup() {
-  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'backup.json';
-  a.click();
-}
-
-// RESTORE
-function restoreBackup(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    data = JSON.parse(reader.result);
-    save();
-  };
-  reader.readAsText(file);
+  document.getElementById('total').textContent=store.data.length;
+  document.getElementById('paid').textContent=paid;
+  document.getElementById('unpaid').textContent=store.data.length-paid;
+  document.getElementById('earned').textContent=earned;
+  document.getElementById('pending').textContent=pending;
 }
 
 render();
