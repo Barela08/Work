@@ -2,7 +2,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Work Tracker FINAL+</title>
+<title>Work Tracker FINAL++</title>
 <style>
 body{font-family:'Segoe UI';margin:0;background:linear-gradient(135deg,#667eea,#764ba2);color:white}
 .container{padding:20px}
@@ -17,7 +17,8 @@ input{padding:10px;border-radius:10px;border:none;margin:5px}
 </head>
 <body>
 <div class="container">
-<h2>💼 Work Tracker FINAL+</h2><div class="card">
+<h2>💼 Work Tracker FINAL++</h2><div class="card">
+<input type="date" id="date">
 <input type="number" id="amount" placeholder="₹ amount">
 <br>
 <button class="add" onclick="addDay()">+ Add Day</button>
@@ -37,7 +38,7 @@ input{padding:10px;border-radius:10px;border:none;margin:5px}
 <ul id="payments"></ul>
 </div>
 </div><script>
-// SAFE LOAD (kabhi crash na ho)
+// SAFE LOAD
 let store;
 try {
   store = JSON.parse(localStorage.getItem('store')) || {days:[],payments:[],advance:0};
@@ -45,21 +46,30 @@ try {
   store = {days:[],payments:[],advance:0};
 }
 
+// AUTO TODAY DATE
+function setToday(){
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('date').value = today;
+}
+
 function save(){
   localStorage.setItem('store', JSON.stringify(store));
   render();
 }
 
-// ADD DAY FIXED ✅
+// FIXED ADD DAY ✅
 function addDay(){
+  const dateInput = document.getElementById('date');
   const amtInput = document.getElementById('amount');
+
+  const date = dateInput.value || new Date().toLocaleDateString();
   const amount = Number(amtInput.value) || 0;
 
-  const today = new Date().toLocaleDateString();
+  // push always
+  store.days.push({date: date, amount: amount});
 
-  store.days.push({date: today, amount: amount});
-
-  amtInput.value = ''; // clear
+  // clear amount only
+  amtInput.value = '';
 
   save();
 }
@@ -127,6 +137,8 @@ function render(){
   });
 }
 
+// INIT
+setToday();
 render();
 </script></body>
 </html>
