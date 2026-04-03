@@ -4,24 +4,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Work Tracker</title>
   <style>
-    body { font-family: Arial; padding: 15px; max-width: 500px; margin: auto; }
-    h1 { text-align: center; }
-    button { padding: 8px; margin: 5px 0; width: 100%; }
-    input { padding: 6px; width: 100%; margin-top: 5px; }
-    .card { border: 1px solid #ccc; padding: 10px; margin-top: 10px; border-radius: 8px; }
-    .row { display: flex; justify-content: space-between; align-items: center; }
+    body { font-family: 'Segoe UI', sans-serif; background:#f5f7fb; padding:15px; max-width:520px; margin:auto; }
+    h1 { text-align:center; color:#333; }
+    button { padding:10px; margin-top:6px; width:100%; border:none; border-radius:8px; background:#4CAF50; color:white; font-weight:600; }
+    button:hover { opacity:0.9; }
+    input { padding:8px; width:100%; margin-top:6px; border-radius:6px; border:1px solid #ccc; }
+    .card { background:white; box-shadow:0 2px 8px rgba(0,0,0,0.08); padding:12px; margin-top:12px; border-radius:10px; }
+    .row { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .danger { background:#e74c3c; }
+    .secondary { background:#3498db; }
+    .summary p { margin:6px 0; font-weight:500; }
   </style>
 </head>
 <body><h1>Work Tracker</h1><button onclick="addToday()">+ Add Today</button> <input type="date" onchange="addCustom(this.value)">
 
 <div class="card">
   <input id="bulk" placeholder="Bulk Amount">
-  <button onclick="applyBulk()">Apply to All</button>
-</div><div id="days"></div><div class="card">
+  <button class="secondary" onclick="applyBulk()">Apply to All</button>
+</div><div id="days"></div><div class="card summary">
   <p>Total Days: <span id="totalDays"></span></p>
   <p>Total Amount: ₹<span id="totalAmount"></span></p>
   <p>Remaining: ₹<span id="remaining"></span></p>
-</div><button onclick="addPayment()">Receive Payment</button> <button onclick="addAdvance()">Add Advance</button> <button onclick="window.print()">Print</button>
+</div><button onclick="addPayment()">Receive Payment</button> <button onclick="addAdvance()">Add Advance</button> <button class="secondary" onclick="window.print()">Print</button>
 
 <div class="card">
   <h3>Payments</h3>
@@ -74,14 +78,36 @@ function addPayment() {
   save();
 }
 
+function getRemaining() {
+  let total = data.days.reduce((s, d) => s + Number(d.amount || 0), 0);
+  let paid = data.payments.reduce((s, p) => s + p.amount, 0);
+  let adv = data.advances.reduce((s, a) => s + a.amount, 0);
+  return total - paid - adv;
+}
+
 function addAdvance() {
   let amt = Number(prompt("Enter advance amount"));
   if (!amt) return;
+
+  let remaining = getRemaining();
+  if (amt > remaining) {
+    alert("Advance cannot exceed remaining amount");
+    return;
+  }
+
   data.advances.push({ amount: amt, date: new Date().toLocaleDateString() });
   save();
 }
 
 function deleteAdvance(i) {
+  let remainingBefore = getRemaining();
+  let advAmount = data.advances[i].amount;
+
+  if (advAmount > remainingBefore + advAmount) {
+    alert("Cannot delete this advance");
+    return;
+  }
+
   data.advances.splice(i, 1);
   save();
 }
@@ -94,11 +120,11 @@ function render() {
     daysDiv.innerHTML += `
       <div class="card">
         <div class="row">
-          <div>
-            <p>${d.date}</p>
-            <input value="${d.amount}" oninput="updateAmount(${i}, this.value)">
+          <div style="flex:1">
+            <p><b>${d.date}</b></p>
+            <input value="${d.amount}" placeholder="Enter amount" oninput="updateAmount(${i}, this.value)">
           </div>
-          <button onclick="deleteDay(${i})">Delete</button>
+          <button class="danger" onclick="deleteDay(${i})">Delete</button>
         </div>
       </div>`;
   });
@@ -112,13 +138,13 @@ function render() {
   document.getElementById("remaining").innerText = total - paid - adv;
 
   let payDiv = document.getElementById("payments");
-  payDiv.innerHTML = data.payments.map(p => `${p.date} - ₹${p.amount}`).join("<br>");
+  payDiv.innerHTML = data.payments.map(p => `• ${p.date} - ₹${p.amount}`).join("<br>");
 
   let advDiv = document.getElementById("advances");
   advDiv.innerHTML = data.advances.map((a, i) => `
     <div class="row">
-      <span>${a.date} - ₹${a.amount}</span>
-      <button onclick="deleteAdvance(${i})">Delete</button>
+      <span>• ${a.date} - ₹${a.amount}</span>
+      <button class="danger" onclick="deleteAdvance(${i})">Delete</button>
     </div>
   `).join("");
 }
