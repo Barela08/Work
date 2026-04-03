@@ -2,12 +2,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Work Tracker FINAL++</title>
+<title>Work Tracker FINAL WORKING</title>
 <style>
 body{font-family:'Segoe UI';margin:0;background:linear-gradient(135deg,#667eea,#764ba2);color:white}
 .container{padding:20px}
 .card{background:rgba(255,255,255,0.1);border-radius:15px;padding:15px;margin-bottom:15px}
-button{padding:10px 14px;border:none;border-radius:10px;margin:5px;cursor:pointer}
+button{padding:12px;border:none;border-radius:10px;margin:5px;cursor:pointer}
 .add{background:#00c853;color:white}
 .pay{background:#2962ff;color:white}
 .adv{background:#ff9800;color:white}
@@ -17,11 +17,10 @@ input{padding:10px;border-radius:10px;border:none;margin:5px}
 </head>
 <body>
 <div class="container">
-<h2>💼 Work Tracker FINAL++</h2><div class="card">
-<input type="date" id="date">
+<h2>💼 Work Tracker (100% FIXED)</h2><div class="card">
 <input type="number" id="amount" placeholder="₹ amount">
 <br>
-<button class="add" onclick="addDay()">+ Add Day</button>
+<button class="add" id="addBtn">+ Add Day</button>
 <button class="pay" onclick="receivePayment()">Receive ₹</button>
 <button class="adv" onclick="addAdvance()">Add Advance</button>
 </div><div class="card">
@@ -38,7 +37,6 @@ input{padding:10px;border-radius:10px;border:none;margin:5px}
 <ul id="payments"></ul>
 </div>
 </div><script>
-// SAFE LOAD
 let store;
 try {
   store = JSON.parse(localStorage.getItem('store')) || {days:[],payments:[],advance:0};
@@ -46,33 +44,24 @@ try {
   store = {days:[],payments:[],advance:0};
 }
 
-// AUTO TODAY DATE
-function setToday(){
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('date').value = today;
-}
-
 function save(){
   localStorage.setItem('store', JSON.stringify(store));
   render();
 }
 
-// FIXED ADD DAY ✅
-function addDay(){
-  const dateInput = document.getElementById('date');
+// SUPER SIMPLE ADD (NO BUG)
+document.getElementById('addBtn').addEventListener('click', function(){
   const amtInput = document.getElementById('amount');
-
-  const date = dateInput.value || new Date().toLocaleDateString();
   const amount = Number(amtInput.value) || 0;
 
-  // push always
-  store.days.push({date: date, amount: amount});
+  const today = new Date().toLocaleDateString();
 
-  // clear amount only
+  store.days.push({date: today, amount: amount});
+
   amtInput.value = '';
 
   save();
-}
+});
 
 function updateAmount(i,val){
   store.days[i].amount = Number(val)||0;
@@ -89,7 +78,6 @@ function deleteDay(i){
 function receivePayment(){
   let amt = Number(prompt('Kitna paisa mila?'))||0;
   if(!amt) return;
-
   store.payments.push({date:new Date().toLocaleDateString(), amount:amt});
   save();
 }
@@ -97,7 +85,6 @@ function receivePayment(){
 function addAdvance(){
   let amt = Number(prompt('Advance kitna liya?'))||0;
   if(!amt) return;
-
   store.advance += amt;
   save();
 }
@@ -137,8 +124,6 @@ function render(){
   });
 }
 
-// INIT
-setToday();
 render();
 </script></body>
 </html>
