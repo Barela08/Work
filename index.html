@@ -44,16 +44,31 @@ let store = JSON.parse(localStorage.getItem('store')) || {
   advance: 0
 };
 
+// AUTO SET TODAY DATE
+function setToday(){
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('date').value = today;
+}
+
 function save(){
   localStorage.setItem('store', JSON.stringify(store));
   render();
 }
 
 function addDay(){
-  let date = document.getElementById('date').value || new Date().toLocaleDateString();
+  let date = document.getElementById('date').value;
   let amount = Number(document.getElementById('amount').value) || 0;
 
+  if(!date){
+    alert('Date missing');
+    return;
+  }
+
   store.days.push({date, amount});
+
+  // clear amount for fast next entry
+  document.getElementById('amount').value = '';
+
   save();
 }
 
@@ -69,7 +84,6 @@ function deleteDay(i){
   }
 }
 
-// RECEIVE PAYMENT
 function receivePayment(){
   let amt = Number(prompt('Kitna paisa mila?'))||0;
   if(!amt) return;
@@ -78,7 +92,6 @@ function receivePayment(){
   save();
 }
 
-// ADVANCE
 function addAdvance(){
   let amt = Number(prompt('Advance kitna liya?'))||0;
   store.advance += amt;
@@ -119,6 +132,8 @@ function render(){
   });
 }
 
+// INIT
+setToday();
 render();
 </script></body>
 </html>
