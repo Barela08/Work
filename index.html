@@ -1,74 +1,126 @@
-<!DOCTYPE html><html>
+<!DOCTYPE html><html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Work Tracker SIMPLE FIX</title>
-<style>
-body{font-family:sans-serif;background:#222;color:#fff;padding:15px}
-button{padding:10px;margin:5px}
-input{padding:8px;margin:5px}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Work Tracker</title>
+  <style>
+    body { font-family: Arial; padding: 15px; max-width: 500px; margin: auto; }
+    h1 { text-align: center; }
+    button { padding: 8px; margin: 5px 0; width: 100%; }
+    input { padding: 6px; width: 100%; margin-top: 5px; }
+    .card { border: 1px solid #ccc; padding: 10px; margin-top: 10px; border-radius: 8px; }
+    .row { display: flex; justify-content: space-between; align-items: center; }
+  </style>
 </head>
-<body><h2>Work Tracker (Simple & Working)</h2><input type="number" id="amount" placeholder="₹ amount">
-<button onclick="addDay()">+ Add Day</button>
-<button onclick="pay()">Receive ₹</button>
-<button onclick="advance()">Advance</button><h3>Total Days: <span id="days">0</span></h3>
-<h3>Total Amount: ₹<span id="total">0</span></h3>
-<h3>Remaining: ₹<span id="remaining">0</span></h3>
-<h3>Advance: ₹<span id="adv">0</span></h3><ul id="list"></ul><script>
-let store = JSON.parse(localStorage.getItem('store')) || {
-  days: [], payments: [], advance: 0
+<body><h1>Work Tracker</h1><button onclick="addToday()">+ Add Today</button> <input type="date" onchange="addCustom(this.value)">
+
+<div class="card">
+  <input id="bulk" placeholder="Bulk Amount">
+  <button onclick="applyBulk()">Apply to All</button>
+</div><div id="days"></div><div class="card">
+  <p>Total Days: <span id="totalDays"></span></p>
+  <p>Total Amount: ₹<span id="totalAmount"></span></p>
+  <p>Remaining: ₹<span id="remaining"></span></p>
+</div><button onclick="addPayment()">Receive Payment</button> <button onclick="addAdvance()">Add Advance</button> <button onclick="window.print()">Print</button>
+
+<div class="card">
+  <h3>Payments</h3>
+  <div id="payments"></div>
+</div><div class="card">
+  <h3>Advances</h3>
+  <div id="advances"></div>
+</div><script>
+let data = JSON.parse(localStorage.getItem("tracker")) || {
+  days: [], payments: [], advances: []
 };
 
-function save(){
-  localStorage.setItem('store', JSON.stringify(store));
+function save() {
+  localStorage.setItem("tracker", JSON.stringify(data));
   render();
 }
 
-function addDay(){
-  let amt = Number(document.getElementById('amount').value) || 0;
-  store.days.push({date:new Date().toLocaleDateString(), amount:amt});
-  document.getElementById('amount').value = '';
+function addToday() {
+  let today = new Date().toISOString().split('T')[0];
+  data.days.push({ date: today, amount: "" });
   save();
 }
 
-function pay(){
-  let amt = Number(prompt('Kitna mila?'))||0;
-  if(!amt) return;
-  store.payments.push({amount:amt});
+function addCustom(date) {
+  if (!date) return;
+  data.days.push({ date, amount: "" });
   save();
 }
 
-function advance(){
-  let amt = Number(prompt('Advance?'))||0;
-  if(!amt) return;
-  store.advance += amt;
+function updateAmount(i, val) {
+  data.days[i].amount = val;
   save();
 }
 
-function del(i){
-  store.days.splice(i,1);
+function deleteDay(i) {
+  data.days.splice(i, 1);
   save();
 }
 
-function render(){
-  let total = 0;
-  let list = document.getElementById('list');
-  list.innerHTML='';
+function applyBulk() {
+  let val = document.getElementById("bulk").value;
+  data.days.forEach(d => d.amount = val);
+  save();
+}
 
-  store.days.forEach((d,i)=>{
-    total += d.amount;
-    let li = document.createElement('li');
-    li.innerHTML = `${d.date} ₹${d.amount} <button onclick="del(${i})">X</button>`;
-    list.appendChild(li);
+function addPayment() {
+  let amt = Number(prompt("Enter payment amount"));
+  if (!amt) return;
+  data.payments.push({ amount: amt, date: new Date().toLocaleDateString() });
+  save();
+}
+
+function addAdvance() {
+  let amt = Number(prompt("Enter advance amount"));
+  if (!amt) return;
+  data.advances.push({ amount: amt, date: new Date().toLocaleDateString() });
+  save();
+}
+
+function deleteAdvance(i) {
+  data.advances.splice(i, 1);
+  save();
+}
+
+function render() {
+  let daysDiv = document.getElementById("days");
+  daysDiv.innerHTML = "";
+
+  data.days.forEach((d, i) => {
+    daysDiv.innerHTML += `
+      <div class="card">
+        <div class="row">
+          <div>
+            <p>${d.date}</p>
+            <input value="${d.amount}" oninput="updateAmount(${i}, this.value)">
+          </div>
+          <button onclick="deleteDay(${i})">Delete</button>
+        </div>
+      </div>`;
   });
 
-  let paid = store.payments.reduce((a,b)=>a+b.amount,0);
-  let remaining = total - paid - store.advance;
+  let total = data.days.reduce((s, d) => s + Number(d.amount || 0), 0);
+  let paid = data.payments.reduce((s, p) => s + p.amount, 0);
+  let adv = data.advances.reduce((s, a) => s + a.amount, 0);
 
-  document.getElementById('days').textContent = store.days.length;
-  document.getElementById('total').textContent = total;
-  document.getElementById('remaining').textContent = remaining;
-  document.getElementById('adv').textContent = store.advance;
+  document.getElementById("totalDays").innerText = data.days.length;
+  document.getElementById("totalAmount").innerText = total;
+  document.getElementById("remaining").innerText = total - paid - adv;
+
+  let payDiv = document.getElementById("payments");
+  payDiv.innerHTML = data.payments.map(p => `${p.date} - ₹${p.amount}`).join("<br>");
+
+  let advDiv = document.getElementById("advances");
+  advDiv.innerHTML = data.advances.map((a, i) => `
+    <div class="row">
+      <span>${a.date} - ₹${a.amount}</span>
+      <button onclick="deleteAdvance(${i})">Delete</button>
+    </div>
+  `).join("");
 }
 
 render();
